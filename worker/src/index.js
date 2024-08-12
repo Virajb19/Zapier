@@ -1,5 +1,5 @@
 const { Kafka } = require("kafkajs");
-const client = require("../../db");
+const {client} = require("../../db");
 
 const kafka = new Kafka({
   clientId: "outbox-processor",
@@ -19,7 +19,16 @@ async function main() {
         value: message.value?.toString(),
       });
 
-      await new Promise((r) => setTimeout(r, 2000));
+      const parsedValue = JSON.parse(message.value?.toString())
+      const zapRunId = parsedValue.zapRunId
+      const stage = parsedValue.stage
+
+      const zapRunDetails = await client.zapRun.findFirst({
+        where: {id: zapRunId},
+        include: {zap: {include: {trigger: true}}}
+      })
+
+      await new Promise(r => setTimeout(r, 500))
 
       console.log('processing done')
 
